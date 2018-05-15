@@ -19,6 +19,8 @@ public class MainBack {
 	final static String INCURSIONESI = "https://esi.tech.ccp.is/latest/incursions/?datasource=tranquility";
 	final static String SOVESI = "https://esi.evetech.net/latest/sovereignty/map/";
 	final static String FACTIONESI ="https://esi.evetech.net/latest/universe/factions/";
+	final static String ALLIANCEESI = "https://esi.evetech.net/latest/alliances/";
+	final static String CONSTELLATIONESI = "https://esi.evetech.net/latest/universe/constellations/";
 	final static int MAXINCURSIONSPAWNS = 7;
 	protected static final String DATASOURCE = "tranquility";
 	protected static final int CHARACTER_ID_CHRIBBA = 196379789;
@@ -36,6 +38,7 @@ public class MainBack {
 		int [] staging = new int[MAXINCURSIONSPAWNS];
 		String [] esiSovMap = new String[999];
 		String [] esiFaction = new String[23];
+		String esiConstellation = "";
 		
 		parsedIncursions = incursionParse(INCURSIONESI);
 		constellations = getConstellationID(parsedIncursions);
@@ -53,6 +56,7 @@ public class MainBack {
 				CURRENTNUMINCURSIONS = i;
 				break;
 			} else {
+				esiConstellation = esiParse(CONSTELLATIONESI, 1, constellations[i])[0];
 				incursions[i] = new Incursion(
 						constellations[i], 
 						momStatus[i],  
@@ -60,7 +64,11 @@ public class MainBack {
 						influence[i],
 						staging[i],
 						state[i],
-						null);
+						null,
+						getFactionID(esiSovMap, staging[i], esiFaction),
+						null,
+						postUniverseNames(new JSONArray("[" + constellations[i] + "]"))[0],
+						postUniverseNames(new JSONArray("[" + new JSONObject(esiConstellation).get("region_id") + "]"))[0]);
 			}
 		}
 		for(int i = 0; i < MAXINCURSIONSPAWNS; i++) {
@@ -70,16 +78,6 @@ public class MainBack {
 				incursions[i].setSystemNames(postUniverseNames(incursions[i].getSystemIDs()));
 			}
 		}
-		
-		for(int i = 0; i < 8045; i++) {
-			if(esiFaction[i] == null) {
-				System.out.println("\n" + i + "\n\n");
-				break;
-			} else {
-				System.out.println(esiFaction[i]);
-			}
-		}
-		//System.out.println(getFactionID(esiSovMap, incursions[3].getStagingID(), esiFaction));
 		
 		return incursions;
 	}
@@ -156,7 +154,7 @@ public class MainBack {
 	
 	public static int[] getConstellationID(String p[]) throws JSONException {
 		String [] out = p;
-		int[] constellation = new int[MAXINCURSIONSPAWNS];
+		int[] constellation = new int[MAXINCURSIONSPAWNS]; 
 
 		for (int i = 0; i < 7; i++) {
 			if (out[i] == null) {
@@ -221,6 +219,28 @@ public class MainBack {
 		return out;
 	}
 	
+	public static String[] esiParse(String u, int s, int a) throws Exception{
+		String concatenate = u + a + "/";
+		URL url = new URL(concatenate);
+		BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+		int size = s;
+		
+		String inputLine;
+		String string = "";
+		while ((inputLine = in.readLine()) != null) {
+			string = string + inputLine;
+		}
+		
+		in.close();
+		
+		int start = 1;
+		int count = 0;
+		String[] out = new String[size];
+		out[0] = string;
+		
+		return out;
+	}
+	
 	public static String[] postUniverseNames(JSONArray jsonArray) throws ApiException, JSONException {
         final List<Integer> ids = new ArrayList<>();
         int [] systems = parseSystems(jsonArray);
@@ -242,33 +262,37 @@ public class MainBack {
     }
 	
 	public static int[] parseSystems(JSONArray j) throws JSONException {
-		int [] parsed = new int[9];
-		
+		int [] parsed = new int[10];
+
 		for(int i = 0; i<j.length(); i++) {
 			parsed[i] = j.getInt(i);
 		}
-		
+
 		return parsed;
 	}
 	
-	public static String getFactionName(int l, String p[]) throws JSONException {
+	public static String getFactionName(int l, String p[], int c) throws JSONException {
 		String [] out = p;
 		String faction = "errorrrr";
 		int look = l;
-		int factionid; 
-		
+		int factionid = 0; 
+		int change = c;
+	
 		for(int i = 0; i<23; i++) {
+			System.out.println(out[i]);
 			JSONObject jsonObject = new JSONObject(out[i]);
 			factionid = (int) jsonObject.get("faction_id");
+
 			if(factionid == look) {
 				faction = jsonObject.getString("name");
+				break;
 			}
 		}
 		
 		return faction;
 	}
 	
-	public static String getFactionID(String p[], int l, String o[]) throws JSONException {
+	public static String getFactionID(String p[], int l, String o[]) throws Exception {
 		String [] out = p;
 		String [] through = o;
 		int look = l;
@@ -285,14 +309,16 @@ public class MainBack {
 			if(system == look) {
 				if(jsonObject.has("faction_id") == false) {
 					faction = (int) jsonObject.get("alliance_id");
+					jsonObject = new JSONObject(esiParse(ALLIANCEESI, 1, faction)[0]);
+					factionName = (String) jsonObject.get("name");
 				} else {
 					faction = (int) jsonObject.get("faction_id");
-					factionName = getFactionName(faction, through);
+					factionName = getFactionName(faction, through, 1);
 				}
 			}
 		}
 		
-		System.out.println(faction);
+		System.out.println("faction name: " + faction);
 		return factionName;
 	}
 	
@@ -316,6 +342,9 @@ public class MainBack {
 					System.out.println(incursions[i].getSystemNames()[j]);
 				}
 				System.out.println(incursions[i].getInfluence());
+				System.out.println(incursions[i].getFaction());
+				System.out.println(incursions[i].getConstellationName());
+				System.out.println(incursions[i].getRegion());
 			}
 		}
 		

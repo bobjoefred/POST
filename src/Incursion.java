@@ -8,8 +8,12 @@ public class Incursion {
 	private int stagingID;
 	private String status;
 	private String [] systemNames;
+	private String faction;
+	private String security;
+	private String constellationName;
+	private String region;
 	
-	public Incursion(int cid, boolean mom, JSONArray sys, double inf, int sid, String sta, String[] sysN) {
+	public Incursion(int cid, boolean mom, JSONArray sys, double inf, int sid, String sta, String[] sysN, String f, String sec, String cName, String reg) {
 		constellationID = cid;
 		hasMom = mom;
 		systems = sys;
@@ -17,6 +21,10 @@ public class Incursion {
 		stagingID = sid;
 		status = sta;
 		systemNames = sysN;
+		faction = f;
+		security = sec;
+		constellationName = cName;
+		region = reg;
 	}
 	
 	//Sets the new Influence
@@ -72,5 +80,20 @@ public class Incursion {
 	//Returns the system 
 	public String[] getSystemNames() {
 		return systemNames;
+	}
+	
+	//Returns the faction/alliance name
+	public String getFaction() {
+		return faction;
+	}
+	
+	//Returns the constellation name
+	public String getConstellationName() {
+		return constellationName;
+	}
+	
+	//Returns the region name
+	public String getRegion() {
+		return region;
 	}
 }
